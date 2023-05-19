@@ -46,7 +46,9 @@ exports.findByCategory = (req, res, next) => {
 }
 
 exports.findByCity = (req, res, next) => {
-    Restaurant.find({'localisation.city': req.params.city})
+    Restaurant.find({'localisation.city': {
+        $regex: new RegExp("^" + req.params.city.toLowerCase(), "i")
+    }})
     .then(restaurants => res.status(200).json(restaurants))
     .catch(error => res.status(400).json({error: error.toString()}));
 }
@@ -105,5 +107,12 @@ exports.update = (req, res, next) => {
 exports.getMeals = (req, res, next) => {
     Meal.find({restaurant: req.params.id})
     .then(meals => res.status(200).json(meals))
+    .catch(error => res.status(400).json({error: error.toString()}));
+}
+
+exports.getAppreciations = (req, res, next) => {
+    Appreciation.find({restaurant: req.params.id})
+    .populate('user')
+    .then(appreciations => res.status(200).json(appreciations))
     .catch(error => res.status(400).json({error: error.toString()}));
 }

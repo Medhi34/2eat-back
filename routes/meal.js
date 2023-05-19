@@ -11,6 +11,8 @@ router.put('/:idRes/:id', auth, multer, mealCtrl.update);
 
 router.delete('/:idRes/:id', auth, mealCtrl.delete);
 
-router.get('/:idRes/:id', mealCtrl.findById);
+router.get('/:id', mealCtrl.findById);
+
+router.get('/', mealCtrl.findAll);
 
 module.exports = router;
