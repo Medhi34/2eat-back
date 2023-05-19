@@ -7,13 +7,12 @@ const userSchema = new Schema({
     orders: [{type: Schema.Types.ObjectId, ref: 'Order'}],
     restaurants: [{type: Schema.Types.ObjectId, ref: 'Restaurant'}],
     appreciations: [{type: Schema.Types.ObjectId, ref: 'Appreciation'}],
-    name: {type: String, required: true},
-    surname: String,
+    fullname: {type: String, required: true},
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true},
     phone: Number,
     imageUrl: String,
-    localisation: {type: localisationSchema},
+    localisation: {type: localisationSchema}
 });
 
 const User = mongoose.model('User', userSchema);

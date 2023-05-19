@@ -19,4 +19,6 @@ router.get('/:id', restaurantCtrl.findbyId);
 
 router.get('/:id/meals', restaurantCtrl.getMeals);
 
+router.get('/:id/appreciations', restaurantCtrl.getAppreciations);
+
 module.exports = router;

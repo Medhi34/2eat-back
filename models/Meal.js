@@ -7,7 +7,7 @@ const mealSchema = new Schema({
     name: {type: String, unique: true},
     images: {type: Map, of: Image},
     accompagnements: [String],
-    prix: {type: Number, required: true},
+    price: {type: Number, required: true},
     restaurant: {type: Schema.Types.ObjectId, ref: 'Restaurant'}
 });
 

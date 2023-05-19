@@ -12,6 +12,7 @@ const restaurantSchema = new Schema({
     date_save: {type: Date},
     localisation: {type: localisationSchema},
     categories: {type: [String], enum: ['Street-food', 'Fast-food', 'Caféteria', 'Café-Resto', 'Restaurant Classique', 'Cuisine Traditionnelle']},
+    nbVotes: {type: Number, default:1},
     images: {type: Map, of: Image},
     meals: [{type: Schema.Types.ObjectId, ref: 'Meal'}],
     appreciations: [{type: Schema.Types.ObjectId, ref: 'Appreciation'}]

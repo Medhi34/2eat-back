@@ -112,6 +112,14 @@ exports.delete = (req, res, next) => {
 
 exports.findById = (req, res, next) => {
     Meal.findById({_id: req.params.id})
+    .populate('restaurant')
     .then(meal => res.status(200).json(meal))
+    .catch(error => res.status(400).json({error: error.toString()}));
+}
+
+exports.findAll = (req, res, next) => {
+    Meal.find()
+    .populate('restaurant')
+    .then(meals => res.status(200).json(meals))
     .catch(error => res.status(400).json({error: error.toString()}));
 }
