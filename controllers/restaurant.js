@@ -2,6 +2,7 @@ const Appreciation = require('../models/Appreciation');
 const Meal = require('../models/Meal');
 const Restaurant = require('../models/Restaurant');
 const fs = require('fs');
+const calculator = require('./localisation');
 
 exports.create = (req, res, next) => {
     const restaurantObject = req.files ? {
@@ -34,32 +35,85 @@ exports.create = (req, res, next) => {
 }
 
 exports.findAll = (req, res, next) => {
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
+
     Restaurant.find()
-    .then(restaurants => res.status(200).json(restaurants))
+    .then(restaurants => {
+        let results = [];
+        for(let rest of restaurants){
+            const distance = calculator.distance(rest.localisation.latitude, rest.localisation.longitude, lat, lon);
+            const newItem = {
+                restaurant: rest,
+                distance: distance
+            }
+            results.push(newItem);
+        }
+        results = results.sort((a, b) => a.distance - b.distance);
+        res.status(200).json(results)
+    })
     .catch(error => res.status(400).json({error: error.toString()}));
 }
 
 exports.findByCategory = (req, res, next) => {
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
+
     Restaurant.find({categories: req.params.category})
-    .then(restaurants => res.status(200).json(restaurants))
+    .then(restaurants => {
+        let results = [];
+        for(let rest of restaurants){
+            const distance = calculator.distance(rest.localisation.latitude, rest.localisation.longitude, lat, lon);
+            const newItem = {
+                restaurant: rest,
+                distance: distance
+            }
+            results.push(newItem);
+        }
+        results = results.sort((a, b) => a.distance - b.distance);
+        res.status(200).json(results)
+    })
     .catch(error => res.status(400).json({error: error.toString()}));
 }
 
 exports.findByCity = (req, res, next) => {
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
+
     Restaurant.find({'localisation.city': {
         $regex: new RegExp("^" + req.params.city.toLowerCase(), "i")
     }})
-    .then(restaurants => res.status(200).json(restaurants))
+    .then(restaurants => {
+        let results = [];
+        for(let rest of restaurants){
+            const distance = calculator.distance(rest.localisation.latitude, rest.localisation.longitude, lat, lon);
+            const newItem = {
+                restaurant: rest,
+                distance: distance
+            }
+            results.push(newItem);
+        }
+        results = results.sort((a, b) => a.distance - b.distance);
+        res.status(200).json(results)
+    })
     .catch(error => res.status(400).json({error: error.toString()}));
 }
 
 exports.findbyId = (req, res, next) => {
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
+
     Restaurant.findOne({_id: req.params.id})
     .then(restaurant => {
         Appreciation.find({restaurant: restaurant._id})
         .then(appreciations => {
+            const distance = calculator.distance(restaurant.localisation.latitude, restaurant.localisation.longitude, lat, lon);
             restaurant.appreciations = appreciations;
-            res.status(200).json(restaurant)
+            const newItem = {
+                restaurant: restaurant,
+                distance: distance
+            }
+            res.status(200).json(newItem)
         })
     })
     .catch(error => res.status(400).json({error: error.toString()}));
