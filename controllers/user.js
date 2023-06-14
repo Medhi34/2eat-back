@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const Restaurant = require('../models/Restaurant');
 const Order = require('../models/Order');
+const calculator = require('./tools');
 
 exports.signup = (req, res, next) => {
     const userObject = req.file ? {
@@ -42,7 +43,7 @@ exports.login = (req, res, next) => {
                 token: jwt.sign(
                     { userId: user._id },
                     'PICK_UP_YOUR_FEELINGS_',
-                    {expiresIn : '24h'}
+                    {}
                 )
             });
         })
@@ -57,34 +58,37 @@ exports.findById = (req, res, next) => {
     .catch(error => res.status(400).json({error: error.toString()}));
 };
 
-exports.update = (req, res, next) => {
-    if(req.file){
-        const userObject = { ...JSON.parse(req.body.user) };
+exports.updateImage = (req, res, next) => {
+    const userObject = { ...JSON.parse(req.body.user) };
 
-        delete userObject._id
-        delete userObject.password
+    delete userObject._id
+    delete userObject.password
+    
 
+    if(userObject.imageUrl != ''){
         const oldFilename = userObject.imageUrl.split('/images')[1];
         fs.unlink(`images/${oldFilename}`, error => { console.log(error) });  
-
-        User.updateOne({_id: req.params.id}, {
-            ...userObject,
-            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-        })
-        .then(() => res.status(200).json({message: "Update done !"}))
-        .catch(error => res.status(400).json({error: error.toString()}));
-    }else {
-        const userObject = {...req.body};
-        delete userObject._id
-        delete userObject.password
-        delete userObject.imageUrl
-
-        User.updateOne({_id: req.params.id}, {
-            ...userObject,
-        })
-        .then(() => res.status(200).json({message: "Update done !"}))
-        .catch(error => res.status(400).json({error: error.toString()}));
     }
+
+    User.updateOne({_id: req.params.id}, {
+        ...userObject,
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    })
+    .then(() => res.status(200).json({message: "Update done !"}))
+    .catch(error => res.status(400).json({error: error.toString()}));
+    
+}
+
+exports.update = (req, res, next) => {
+    const userObject = { ...req.body };
+    delete userObject._id
+    delete userObject.imageUrl
+
+    User.updateOne({_id: req.params.id}, {
+        ...userObject,
+    })
+    .then(() => res.status(200).json({message: "Update done !"}))
+    .catch(error => res.status(400).json({error: error.toString()}));
     
 }
 
@@ -102,10 +106,29 @@ exports.delete = (req, res, next) => {
 }
 
 exports.getRestaurants = (req, res, next) => {
-    Restaurant.find({user: req.params.id})
-    .populate("appreciations")
-    .then(restaurants => res.status(200).json(restaurants))
+    User.findById({_id: req.params.id})
+    .then(user => {
+        Restaurant.find({user: req.params.id})
+        .then(async restaurants => {
+            let results = [];
+            for(let rest of restaurants){
+                const distance = calculator.distance(rest.localisation.latitude, rest.localisation.longitude, user.localisation.latitude, user.localisation.longitude);
+                await calculator.rating(rest._id).then(rate => {
+                    const newItem = {
+                        restaurant: rest,
+                        distance: distance,
+                        rate: rate
+                    }
+                    results.push(newItem);
+                });
+            }
+            results = results.sort((a, b) => a.distance - b.distance);
+            res.status(200).json(results)
+        })
+        .catch(error => res.status(400).json({error: error.toString()}));
+    })
     .catch(error => res.status(400).json({error: error.toString()}));
+    
 }
 
 exports.getOrders = (req, res, next) => {

@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const Image = require('./Image');
 
 const mealSchema = new Schema({
-    name: {type: String, unique: true},
+    name:String,
     images: {type: Map, of: Image},
     accompagnements: [String],
     price: {type: Number, required: true},

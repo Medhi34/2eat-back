@@ -7,7 +7,9 @@ const multer = require('../middleware/multer-config').array('images');
 
 router.post('/', auth, multer, restaurantCtrl.create);
 
-router.put('/:id', auth, multer, restaurantCtrl.update);
+router.put('/:id', auth, restaurantCtrl.update);
+
+router.put('/:id/images', auth, multer, restaurantCtrl.updateImages);
 
 router.get('/', restaurantCtrl.findAll);
 

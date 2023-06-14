@@ -3,9 +3,7 @@ const Restaurant = require('../models/Restaurant');
 const fs = require('fs');
 
 exports.add = (req, res, next) => {
-    const mealObject = req.files ? {
-        ...JSON.parse(req.body.meal)
-    } : { ...req.body };
+    const mealObject = { ...JSON.parse(req.body.meal) }
 
     Restaurant.findById(req.params.idRes)
     .then(restaurant => {
@@ -95,7 +93,7 @@ exports.delete = (req, res, next) => {
 
         Meal.findById({_id: req.params.id})
         .then(meal => {
-            meal.images = new Map(Object.entries(meal.images))
+            meal.images = new Map(Object.entries(meal.images));
             for(const [_key, image] of meal.images.entries()){
                 const oldFilename = image.url.split('/images')[1];
                 fs.unlink(`images/${oldFilename}`, error => { console.log(error) });

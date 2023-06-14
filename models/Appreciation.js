@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const appreciationSchema = new Schema({
-    isVoted: Boolean,
+    note: {type: Number, default: 0},
     review: String,
     date: Date,
     user: {type: Schema.Types.ObjectId, ref: 'User'},

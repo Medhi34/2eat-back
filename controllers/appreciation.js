@@ -32,11 +32,14 @@ exports.update = (req, res, next) => {
 
 };
 
-exports.find = (req, res, next) => {
-    Appreciation.findById({_id: req.params.id})
-    .populate('user')
-    .then(appreciation => res.status(200).json(appreciation))
-    .catch(error => res.status(400).json({error: error.toString()}));
+exports.find = async (idRes) => {
+    let result = [];
+    await Appreciation.find({restaurant: idRes})
+    .then(appreciations => {
+        result = appreciations;
+    })
+    .catch(error => console.log('error :>> ', error));
+    return result;
 };
 
 exports.delete = (req, res, next) => {

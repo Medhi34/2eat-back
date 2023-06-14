@@ -10,7 +10,9 @@ router.post('/login', userCtrl.login);
 
 router.get('/:id', userCtrl.findById);
 
-router.put('/:id', multer, userCtrl.update);
+router.put('/:id/image', multer, userCtrl.updateImage);
+
+router.put('/:id', userCtrl.update);
 
 router.delete('/:id', userCtrl.delete);
 

@@ -2,8 +2,10 @@ const Order = require('../models/Order');
 
 exports.add = (req, res, next) => {
     delete req.body.user
+    delete req.body.meal
     const order = new Order({
         ...req.body,
+        meal: req.params.mealId,
         user: req.auth.userId,
         date: req.body.date ? new Date(req.body.date) : new Date()
     });
