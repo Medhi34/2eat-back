@@ -1,8 +1,9 @@
 const Appreciation = require('../models/Appreciation');
 const Meal = require('../models/Meal');
+const Image = require('../models/Image');
 const Restaurant = require('../models/Restaurant');
 const fs = require('fs');
-const calculator = require('./localisation');
+const calculator = require('./tools');
 
 exports.create = (req, res, next) => {
     const restaurantObject = req.files ? {
@@ -30,7 +31,7 @@ exports.create = (req, res, next) => {
         images: imagesUpload
     });
     restaurant.save()
-    .then(() => res.status(201).json({message: "Restaurant enregistré !"}))
+    .then(restau => res.status(201).json(restau._id))
     .catch(error => res.status(400).json({error: error.toString()}));
 }
 
@@ -39,15 +40,18 @@ exports.findAll = (req, res, next) => {
     const lon = parseFloat(req.query.lon);
 
     Restaurant.find()
-    .then(restaurants => {
+    .then(async restaurants => {
         let results = [];
         for(let rest of restaurants){
             const distance = calculator.distance(rest.localisation.latitude, rest.localisation.longitude, lat, lon);
-            const newItem = {
-                restaurant: rest,
-                distance: distance
-            }
-            results.push(newItem);
+            await calculator.rating(rest._id).then(rate => {
+                const newItem = {
+                    restaurant: rest,
+                    distance: distance,
+                    rate: rate
+                }
+                results.push(newItem);
+            });
         }
         results = results.sort((a, b) => a.distance - b.distance);
         res.status(200).json(results)
@@ -60,15 +64,18 @@ exports.findByCategory = (req, res, next) => {
     const lon = parseFloat(req.query.lon);
 
     Restaurant.find({categories: req.params.category})
-    .then(restaurants => {
+    .then(async restaurants => {
         let results = [];
         for(let rest of restaurants){
             const distance = calculator.distance(rest.localisation.latitude, rest.localisation.longitude, lat, lon);
-            const newItem = {
-                restaurant: rest,
-                distance: distance
-            }
-            results.push(newItem);
+            await calculator.rating(rest._id).then(rate => {
+                const newItem = {
+                    restaurant: rest,
+                    distance: distance,
+                    rate: rate
+                }
+                results.push(newItem);
+            });
         }
         results = results.sort((a, b) => a.distance - b.distance);
         res.status(200).json(results)
@@ -83,15 +90,18 @@ exports.findByCity = (req, res, next) => {
     Restaurant.find({'localisation.city': {
         $regex: new RegExp("^" + req.params.city.toLowerCase(), "i")
     }})
-    .then(restaurants => {
+    .then(async restaurants => {
         let results = [];
         for(let rest of restaurants){
             const distance = calculator.distance(rest.localisation.latitude, rest.localisation.longitude, lat, lon);
-            const newItem = {
-                restaurant: rest,
-                distance: distance
-            }
-            results.push(newItem);
+            await calculator.rating(rest._id).then(rate => {
+                const newItem = {
+                    restaurant: rest,
+                    distance: distance,
+                    rate: rate
+                }
+                results.push(newItem);
+            });
         }
         results = results.sort((a, b) => a.distance - b.distance);
         res.status(200).json(results)
@@ -104,31 +114,57 @@ exports.findbyId = (req, res, next) => {
     const lon = parseFloat(req.query.lon);
 
     Restaurant.findOne({_id: req.params.id})
-    .then(restaurant => {
+    .then(async restaurant => {
         Appreciation.find({restaurant: restaurant._id})
-        .then(appreciations => {
+        .then(async appreciations => {
             const distance = calculator.distance(restaurant.localisation.latitude, restaurant.localisation.longitude, lat, lon);
             restaurant.appreciations = appreciations;
+            restaurant.nbVotes = appreciations.length;
+            let rate = 0;
+            let somme = 0;
+            if(appreciations.length != 0){
+                for(let app of appreciations){
+                    somme += app.note;
+                }
+                rate = Math.floor(somme / appreciations.length);
+            }
             const newItem = {
                 restaurant: restaurant,
-                distance: distance
+                distance: distance,
+                rate: rate
             }
-            res.status(200).json(newItem)
+            res.status(200).json(newItem);
         })
     })
     .catch(error => res.status(400).json({error: error.toString()}));
 }
 
 exports.update = (req, res, next) => {
-    const restaurantObject = req.files ? {
-        ...JSON.parse(req.body.restaurant)
-    } : { ...req.body }
+    const restaurantObject = {...req.body}
     
     delete restaurantObject.meals
-    restaurantObject.images = new Map(Object.entries(restaurantObject.images));
+    delete restaurantObject.images
     
     if(restaurantObject.user != req.auth.userId){
-        res.status(400).json({message: "Unautorized"});
+        res.status(401).json({message: "Unautorized"});
+    }
+
+    Restaurant.updateOne({_id: req.params.id}, {
+        ...restaurantObject,
+        user: req.auth.userId
+    })
+    .then(() => res.status(200).json({message: "Restaurant Updated !"}))
+    .catch(error => res.status(400).json({error: error.toString()}));
+}
+
+exports.updateImages = (req, res, next) => {
+    const restaurantObject = {...JSON.parse(req.body.restaurant)};
+
+    delete restaurantObject.meals
+    restaurantObject.images = new Map(restaurantObject.images);
+    
+    if(restaurantObject.user != req.auth.userId){
+        res.status(401).json({message: "Unautorized"});
     }
 
     for(const [_key, image] of restaurantObject.images.entries()){
@@ -138,15 +174,14 @@ exports.update = (req, res, next) => {
             restaurantObject.images.delete(_key);
         }
     }
-    if(req.files){
-        for(let file of req.files){
-            let img = {
-                url: `${req.protocol}://${req.get('host')}/images/${file.filename}`,
-                isActive: true
-            };
-            const key = img.url.split('/images/')[1].split('.')[0]
-            restaurantObject.images.set(key, img);
-        }
+
+    for(let file of req.files){
+        let img = {
+            url: `${req.protocol}://${req.get('host')}/images/${file.filename}`,
+            isActive: true
+        };
+        const key = img.url.split('/images/')[1].split('.')[0]
+        restaurantObject.images.set(key, img);
     }
 
     Restaurant.updateOne({_id: req.params.id}, {

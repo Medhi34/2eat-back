@@ -6,6 +6,7 @@ const orderSchema = new Schema({
     meal: {type: Schema.Types.ObjectId, ref: 'Meal', required: true},
     date: Date,
     quantity: {type: Number, required: true, default: 1},
+    accompagnement: String,
     hot: {type: Boolean, default: true},
     spiced: {type: Boolean, default: false},
     others: String
