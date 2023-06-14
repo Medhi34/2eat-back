@@ -9,7 +9,7 @@ const mealRoutes = require('./routes/meal');
 const orderRoutes = require('./routes/order');
 const appreciationRoutes = require('./routes/appreciation');
 
-const uri = "mongodb://127.0.0.1:27017/2eat";
+const uri = "mongodb+srv://honoreepale:yKxCgZfGOVtGDDsg@cluster-2eat.atasvqh.mongodb.net/2eat?retryWrites=true&w=majority";
 mongoose.connect(uri,
     {   useNewUrlParser: true,
         useUnifiedTopology: true})
